@@ -1,0 +1,26 @@
+<div class="page-header">Search for UUID's</div>
+<div class="row">
+  <div class="col-lg-4">
+    <div class="form-group">
+      <select class="form-control" id="services_list">
+        <option value="null">Select Service</option>
+        <option value="app_init">APP Init</option>
+        <option value="app_login">APP Login</option>
+        <option value="app_logout">APP Logout</option>
+        <option value="page_view">Page Views</option>
+        <option value="productpage_view">Product Page Views</option>
+      </select>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="input-group">
+        <input id="uuid_value" type="text" placeholder="Enter UUID" class="form-control" aria-label="...">
+        <div class="input-group-btn">
+          <button type="button" class="btn btn-default" id="search">Check!</button>
+        </div><!-- /btn-group -->
+    </div><!-- /input-group -->
+  </div><!-- /.col-lg-6 -->  
+</div><!-- /.row -->
+<div id="search_result">
+</div>
+

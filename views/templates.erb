@@ -1,0 +1,26 @@
+<div class="page-header">Notification Templates</div>
+<div class="container">
+  <div id="formInfo">
+    <span class="label label-info">Add or Modify Template Text</span>
+  </div>
+  <br />
+  <select class="form-control" id="client_list">
+    <option value="null">Select Client</option>
+    {% for cl in clients %}
+      <option value="{{cl.id}}">{{cl.custom_id}}</option>
+    {% endfor %}
+  </select>
+  <br />
+  <select class="form-control" id="notif_cat">
+    <option value="null">Select Category</option>
+    {% for cat in categories %}
+      <option value="{{cat.id}}">{{cat.category_type}}</option>
+    {% endfor %}
+  </select>
+  <br />
+  <textarea rows="3" id="templateText" type="text" class="form-control" placeholder="Template Text"></textarea>
+  <br />
+  <input id="templateState" type="checkbox"> Template State
+  <br /><br />
+  <button id="updateButton" type="button" class="btn btn-default">Update</button>
+</div>
