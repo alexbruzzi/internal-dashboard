@@ -21,7 +21,6 @@ before do
   unless session[:identity]
     session[:previous_url] = request.path
     erb :login_form
-    # @error = 'Sorry, you need to be logged in to visit ' + request.path
     # halt erb(:login_form)
   end
 end
@@ -56,6 +55,7 @@ post '/login' do
     end
   end
   redirect to('/login')
+
 end
 
 # Perform Logout
@@ -97,10 +97,10 @@ end
 
 # Manage Clients
 get '/clients_manage' do
-  erb '<div class="page-header">Client Manage</div>'
+  erb :manage
 end
 
 # Notification Templates
 get '/notification_templates' do
-  erb '<div class="page-header">Notification Template</div>'
+  erb :templates
 end
