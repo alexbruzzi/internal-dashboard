@@ -20,8 +20,7 @@ before do
   pass if %w[login].include? request.path_info.split('/')[1]
   unless session[:identity]
     session[:previous_url] = request.path
-    erb :login_form
-    # halt erb(:login_form)
+    halt erb(:login_form)
   end
 end
 
@@ -83,7 +82,7 @@ get '/uuid_details' do
     )
     result = @sessionCass.execute(@selectUuidStatement)
 
-    if result and result.size == 1
+    if result
       result.rows.each do |r|
         response.push(r.to_s)
       end
@@ -102,5 +101,69 @@ end
 
 # Notification Templates
 get '/notification_templates' do
-  erb :templates
+
+  @cluster = Cassandra.cluster
+  @sessionCass = @cluster.connect(KEYSPACE)
+  @selectTemplatesStatement = @sessionCass.prepare(
+    'SELECT id, category_type FROM octo.template_categories'
+  )
+  result = @sessionCass.execute(@selectTemplatesStatement)
+  @categories = []
+  @clients = []
+
+  if result
+    result.rows.each do |r|
+      temp = {:id => r['id'].to_s, :category_type => r['category_type'].to_s}
+      @categories.push(temp.to_json)
+    end
+  end
+
+  @sessionCass = @cluster.connect('kong')
+  @selectConsumersStatement = @sessionCass.prepare(
+    'SELECT id, custom_id FROM kong.consumers'
+  )
+  result = @sessionCass.execute(@selectConsumersStatement)
+
+  if result
+    result.rows.each do |r|
+      temp = {:id => r['id'].to_s, :custom_id => r['custom_id'].to_s}
+      @clients.push(temp.to_json)
+    end
+  end
+
+  erb :templates, :locals => {:categories => @categories, :clients => @clients}
+
+end
+
+post '/templates/update' do
+
+  templateCategory = params['templateCategory']
+  templateText = params['templateText']
+  templateState = params['templateState']
+  clientId = params['clientId']
+  @cluster = Cassandra.cluster
+  @sessionCass = @cluster.connect(KEYSPACE)
+  @insertTemplatesStatement = @sessionCass.prepare(
+    'INSERT INTO octo.templates (enterpriseid, tcid, active, template_text) VALUES ( ' + clientId + ', ' + templateCategory + ', ' + templateState + ', \'' + templateText + '\')'
+  )
+  result = @sessionCass.execute(@insertTemplatesStatement)
+return "success"
+end
+
+get '/templates_text' do
+
+  templateCategory = params('templateCategory')
+  clientId = params('clientId')
+  @cluster = Cassandra.cluster
+  @sessionCass = @cluster.connect(KEYSPACE)
+  @selectTextStatement = @sessionCass.prepare(
+    'SELECT template_text FROM octo.templates WHERE enterpriseid=' + clientId + ' AND tcid=' + templateCategory
+  )
+  result = @sessionCass.execute(@selectTextStatement)
+  text = ""
+  result.rows.each do |r|
+    text = r['template_text']
+  end
+
+return text
 end

@@ -6,16 +6,16 @@
   <br />
   <select class="form-control" id="client_list">
     <option value="null">Select Client</option>
-    {% for cl in clients %}
-      <option value="{{cl.id}}">{{cl.custom_id}}</option>
-    {% endfor %}
+    <% clients.each do |cl| %>
+      <option value="<%= cl['id'] %>"><%= cl['custom_id'] %></option>
+    <% end %>
   </select>
   <br />
   <select class="form-control" id="notif_cat">
     <option value="null">Select Category</option>
-    {% for cat in categories %}
-      <option value="{{cat.id}}">{{cat.category_type}}</option>
-    {% endfor %}
+    <% categories.each do |cat| %>
+      <option value="<%= cat['id'] %>"><%= cat['category_type'] %></option>
+    <% end %>
   </select>
   <br />
   <textarea rows="3" id="templateText" type="text" class="form-control" placeholder="Template Text"></textarea>
