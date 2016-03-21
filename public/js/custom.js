@@ -1,9 +1,6 @@
 // UUID Search
 $('#search').on('click', function(event) {
 
-    console.log($('#uuid_value').val());
-    console.log($('#services_list').val());
-
     $.get(
         "/uuid_details",
         { 
@@ -81,3 +78,28 @@ $('#client_list').change(function() {
     $('#templateText').val("");
   }
 });
+
+$('#updateRateLimit').click(function(){
+    if ($('#client_manage_list').val() != "null" && $('#rate_limit').val()){
+      $.post("/plugins/update",
+      {
+        plugin_id: $('#client_manage_list :selected').data("pluginid"),
+        consumer_id: $('#client_manage_list :selected').val(),
+        day_limit: $('#rate_limit').val(),
+        apikey: $('#client_manage_list :selected').data("apikey")
+      },
+      function(data,status){
+        if (data == "success"){
+          $('#formInfo').html('<span class="label label-success">Updated Successfull</span>');
+        } else {
+          $('#formInfo').html('<span class="label label-danger">Error</span>');
+        }
+      });
+    } else {
+      $('#formInfo').html('<span class="label label-danger">Input values missing</span>');
+    }
+  });
+
+  $('#client_manage_list').change(function() {
+    
+  });
