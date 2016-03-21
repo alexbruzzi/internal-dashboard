@@ -5,6 +5,7 @@ require 'json'
 require 'cassandra'
 require 'net/http'
 require 'uri'
+require 'digest/sha1'
 
 KEYSPACE = 'octo'
 
@@ -43,15 +44,18 @@ post '/login' do
   @cluster = Cassandra.cluster
   @sessionKong = @cluster.connect('kong')
   @selectUserStatement = @sessionKong.prepare(
-    "SELECT username, password FROM kong.basicauth_credentials"
+    "SELECT username, password, consumer_id FROM kong.basicauth_credentials"
   )
   result = @sessionKong.execute(@selectUserStatement)
-  if result and result.size == 1
+  if result
     result.rows.each do |r|
       if params['username'] == r['username'].to_s
-        session[:identity] = params['username']
-        where_user_came_from = session[:previous_url] || '/'
-        redirect to where_user_came_from
+        key = Digest::SHA1.hexdigest(params['password'] + r['consumer_id'].to_s)
+        if key == r['password'].to_s
+          session[:identity] = params['username']
+          # where_user_came_from = session[:previous_url] || '/'
+          redirect to '/'
+        end
       end
     end
   end
