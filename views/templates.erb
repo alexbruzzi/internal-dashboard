@@ -6,15 +6,15 @@
   <br />
   <select class="form-control" id="client_list">
     <option value="null">Select Client</option>
-    <% clients.each do |cl| %>
-      <option value="<%= cl['id'] %>"><%= cl['custom_id'] %></option>
+    <% @clients.each do |cl| %>
+      <option value="<%= cl[:id] %>"><%= cl[:custom_id] %></option>
     <% end %>
   </select>
   <br />
   <select class="form-control" id="notif_cat">
     <option value="null">Select Category</option>
-    <% categories.each do |cat| %>
-      <option value="<%= cat['id'] %>"><%= cat['category_type'] %></option>
+    <% @categories.each do |cat| %>
+      <option value="<%= cat[:id] %>"><%= cat[:category_type] %></option>
     <% end %>
   </select>
   <br />

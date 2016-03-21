@@ -68,7 +68,7 @@ get '/uuid_track' do
   erb :track
 end
 
-# 
+# Get uuid details (to track uuids)
 get '/uuid_details' do
   
   service_type = params['service_type']
@@ -114,7 +114,7 @@ get '/notification_templates' do
   if result
     result.rows.each do |r|
       temp = {:id => r['id'].to_s, :category_type => r['category_type'].to_s}
-      @categories.push(temp.to_json)
+      @categories.push(temp)
     end
   end
 
@@ -127,14 +127,15 @@ get '/notification_templates' do
   if result
     result.rows.each do |r|
       temp = {:id => r['id'].to_s, :custom_id => r['custom_id'].to_s}
-      @clients.push(temp.to_json)
+      @clients.push(temp)
     end
   end
 
-  erb :templates, :locals => {:categories => @categories, :clients => @clients}
+  erb :templates
 
 end
 
+# Update Template Text wrt client
 post '/templates/update' do
 
   templateCategory = params['templateCategory']
@@ -150,20 +151,29 @@ post '/templates/update' do
 return "success"
 end
 
+
+# Get Template Text wrt client and template category for updation
 get '/templates_text' do
 
-  templateCategory = params('templateCategory')
-  clientId = params('clientId')
-  @cluster = Cassandra.cluster
-  @sessionCass = @cluster.connect(KEYSPACE)
-  @selectTextStatement = @sessionCass.prepare(
-    'SELECT template_text FROM octo.templates WHERE enterpriseid=' + clientId + ' AND tcid=' + templateCategory
-  )
-  result = @sessionCass.execute(@selectTextStatement)
-  text = ""
-  result.rows.each do |r|
-    text = r['template_text']
-  end
+  begin
+    templateCategory = params['templateCategory']
+    clientId = params['clientId']
+    @cluster = Cassandra.cluster
+    @sessionCass = @cluster.connect(KEYSPACE)
+    @selectTextStatement = @sessionCass.prepare(
+      "SELECT template_text FROM octo.templates WHERE enterpriseid = ? AND tcid = ?"
+    )
+    args = [Cassandra::Uuid.new(clientId), Cassandra::Uuid.new(templateCategory)]
+    result = @sessionCass.execute(@selectTextStatement, arguments: args)
+    text = ""
+    result.rows.each do |r|
+      text = r['template_text']
+    end
 
+  rescue Exception => e
+    text = ""
+    print "Error"
+    print e
+  end
 return text
 end
