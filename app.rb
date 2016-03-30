@@ -7,16 +7,19 @@ require 'net/http'
 require 'uri'
 require 'digest/sha1'
 
+require 'octocore'
+
 require_relative 'routes/clients'
 require_relative 'routes/templates'
 require_relative 'routes/uuid_track'
-
 
 KEYSPACE = 'octo'
 
 register Dashboard::Client
 register Dashboard::Templates
 register Dashboard::UuidTrack
+
+Octo.connect_with_config_file(File.join(Dir.pwd, 'config', 'config.yml'))
 
 configure do
   enable :sessions
@@ -35,7 +38,6 @@ before do
     halt erb(:login_form)
   end
 end
-
 
 # Root URL
 get '/' do

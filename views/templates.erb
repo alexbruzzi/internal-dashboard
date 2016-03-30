@@ -4,18 +4,15 @@
     <span class="label label-info">Add or Modify Template Text</span>
   </div>
   <br />
-  <select class="form-control" id="client_list">
+  <select class="form-control" id="template_clients">
     <option value="null">Select Client</option>
     <% @clients.each do |cl| %>
       <option value="<%= cl[:id] %>"><%= cl[:custom_id] %></option>
     <% end %>
   </select>
   <br />
-  <select class="form-control" id="notif_cat">
+  <select class="form-control" id="template_category">
     <option value="null">Select Category</option>
-    <% @categories.each do |cat| %>
-      <option value="<%= cat[:id] %>"><%= cat[:category_type] %></option>
-    <% end %>
   </select>
   <br />
   <textarea rows="3" id="templateText" type="text" class="form-control" placeholder="Template Text"></textarea>

@@ -1,0 +1,27 @@
+<div class="page-header">Template Category</div>
+<div class="container">
+  <div id="formInfo">
+    <span class="label label-info">Add Template Categories</span>
+  </div>
+  <br />
+  <select class="form-control" id="category_client_list">
+    <option value="null">Select Client</option>
+    <% @clients.each do |cl| %>
+      <option value="<%= cl[:id] %>"><%= cl[:custom_id] %></option>
+    <% end %>
+  </select>
+  <br />
+  <ul id="category_list" class="list-group">
+    
+  </ul>
+  <br />
+  <div class="input-group">
+    <span class="input-group-addon"> Category Type </span>
+    <input type="text" class="form-control" placeholder="Text" id="category_type" />
+    <span class="input-group-btn">
+      <button id="updateCategory" type="button" class="btn btn-default"> Update </button>
+    </span>
+    
+  </div>
+  
+</div>

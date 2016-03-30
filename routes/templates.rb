@@ -1,84 +1,128 @@
+require 'cequel'
+
 module Dashboard
-	module Templates
-		def self.registered(app)
+  module Templates
 
-			# Notification Templates
-			app.get '/notification_templates' do
+    def self.registered(app)
 
-			  @cluster = Cassandra.cluster
-			  @sessionOcto = @cluster.connect(KEYSPACE)
-			  @selectTemplatesStatement = @sessionOcto.prepare(
-			    'SELECT id, category_type FROM octo.template_categories'
-			  )
-			  result = @sessionOcto.execute(@selectTemplatesStatement)
-			  @categories = []
-			  @clients = []
+      def checkEnterprise(enterpriseId)
+        return Octo::Enterprise.findOrCreate({id: enterpriseId})
+      end
 
-			  if result
-			    result.rows.each do |r|
-			      temp = {:id => r['id'].to_s, :category_type => r['category_type'].to_s}
-			      @categories.push(temp)
-			    end
-			  end
-			  @sessionKong = @cluster.connect('kong')
-			  @selectConsumersStatement = @sessionKong.prepare(
-			    'SELECT id, custom_id FROM kong.consumers'
-			  )
-			  result = @sessionKong.execute(@selectConsumersStatement)
-			  if result
-			    result.rows.each do |r|
-			      temp = {:id => r['id'].to_s, :custom_id => r['custom_id'].to_s}
-			      @clients.push(temp)
-			    end
-			  end
-			  erb :templates
-			end
-			# end route
+      app.get '/template_categories' do
 
-			# Update Template Text wrt client
-			app.post '/templates/update' do
+        @cluster = Cassandra.cluster
+        @sessionKong = @cluster.connect('kong')
+        @selectConsumersStatement = @sessionKong.prepare(
+          'SELECT id, custom_id FROM kong.consumers'
+        )
+        result = @sessionKong.execute(@selectConsumersStatement)
+        @clients = []
+        if result
+          result.rows.each do |r|
+            temp = {:id => r['id'].to_s, :custom_id => r['custom_id'].to_s}
+            @clients.push(temp)
+          end
+        end
+      erb :category
+      end
 
-			  templateCategory = params['templateCategory']
-			  templateText = params['templateText']
-			  templateState = params['templateState']
-			  clientId = params['clientId']
-			  @cluster = Cassandra.cluster
-			  @sessionOcto = @cluster.connect(KEYSPACE)
-			  @insertTemplatesStatement = @sessionOcto.prepare(
-			    'INSERT INTO octo.templates (enterpriseid, tcid, active, template_text) VALUES ( ' + clientId + ', ' + templateCategory + ', ' + templateState + ', \'' + templateText + '\')'
-			  )
-			  result = @sessionOcto.execute(@insertTemplatesStatement)
-			return "success"
-			end
-			# end route
+      app.get '/fetch_categories' do
+        content_type :json
 
+        begin
+          clientId = params['clientId']
+          @categories = []
+          Octo::Template.where(enterprise_id: clientId).each do |r|
+            temp = {:category_type => r[:category_type].to_s}
+            @categories.push(temp)
+          end
+        rescue Exception => e
+          print e.to_s
+        end
+      return @categories.to_json
+      end
 
-			# Get Template Text wrt client and template category for updation
-			app.get '/templates_text' do
+      app.post '/add_category' do
+        begin
+          clientId = params['clientId']
+          category_type = params['category_type']
+          Octo::Template.findOrCreate({enterprise_id: clientId, category_type: category_type})
+        rescue Exception => e
+          print e.to_s
+        end
+      return "success"
+      end
 
-			  begin
-			    templateCategory = params['templateCategory']
-			    clientId = params['clientId']
-			    @cluster = Cassandra.cluster
-			    @sessionOcto = @cluster.connect(KEYSPACE)
-			    @selectTextStatement = @sessionOcto.prepare(
-			      "SELECT template_text FROM octo.templates WHERE enterpriseid = ? AND tcid = ?"
-			    )
-			    args = [Cassandra::Uuid.new(clientId), Cassandra::Uuid.new(templateCategory)]
-			    result = @sessionOcto.execute(@selectTextStatement, arguments: args)
-			    text = ""
-			    result.rows.each do |r|
-			      text = r['template_text']
-			    end
+      # Notification Templates
+      app.get '/notification_templates' do
 
-			  rescue Exception => e
-			    text = ""
-			    print e.to_s
-			  end
-			return text
-			end
-			# end route
+        @clients = []
+        @cluster = Cassandra.cluster
+        @sessionKong = @cluster.connect('kong')
+        @selectConsumersStatement = @sessionKong.prepare(
+          'SELECT id, custom_id FROM kong.consumers'
+        )
+        result = @sessionKong.execute(@selectConsumersStatement)
+        if result
+          result.rows.each do |r|
+            temp = {:id => r['id'].to_s, :custom_id => r['custom_id'].to_s}
+            @clients.push(temp)
+          end
+        end
+        erb :templates
+      end
+      # end route
 
-		end
-	end
+      # Update Template Text wrt client
+      app.post '/template_update' do
+
+        begin
+          templateCategory = params['templateCategory']
+          templateText = params['templateText']
+          templateState = params['templateState']
+          clientId = params['clientId']
+          args = {
+            enterprise_id: clientId,
+            category_type: templateCategory
+          }
+          options = {
+            active: templateState,
+            template_text: templateText
+          }
+          Octo::Template.findOrCreateOrUpdate(args, options)
+
+        rescue Exception => e
+          print e.to_s
+        end
+      return "success"
+      end
+      # end route
+
+      # Get Template Text wrt client and template category for updation
+      app.get '/templates_text' do
+
+        begin
+          clientId = params['clientId']
+          templateCategory = params['templateCategory']
+          args = {
+            enterprise_id: clientId,
+            category_type: templateCategory
+          }
+          result = Octo::Template.findOrCreate(args)
+
+          text = result[:template_text]
+          state = result[:active]
+
+        rescue Exception => e
+          text = ""
+          state = false
+          print e.to_s
+        end
+      return {:text => text, :state => state}.to_json
+      end
+      # end route
+
+    end
+  end
 end
