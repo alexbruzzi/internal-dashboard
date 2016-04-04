@@ -12,12 +12,14 @@ require 'octocore'
 require_relative 'routes/clients'
 require_relative 'routes/templates'
 require_relative 'routes/uuid_track'
+require_relative 'routes/analytics'
 
 KEYSPACE = 'octo'
 
 register Dashboard::Client
 register Dashboard::Templates
 register Dashboard::UuidTrack
+register Dashboard::Analytics
 
 Octo.connect_with_config_file(File.join(Dir.pwd, 'config', 'config.yml'))
 

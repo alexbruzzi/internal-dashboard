@@ -38,19 +38,6 @@ module Dashboard
               response.push(r.to_s)
             end
           end
-
-          # @cluster = Cassandra.cluster
-          # @sessionOcto = @cluster.connect(KEYSPACE)
-          # @selectUuidStatement = @sessionOcto.prepare(
-          #   'SELECT * FROM octo.' + service_type + ' WHERE id=' + uuid_value
-          # )
-          # result = @sessionOcto.execute(@selectUuidStatement)
-
-          # if result
-          #   result.rows.each do |r|
-          #     response.push(r.to_s)
-          #   end
-          # end
         rescue Exception => e
           return "Error"
         end
