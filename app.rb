@@ -56,21 +56,13 @@ end
 # Perform Login
 post '/login' do
 
-  # Connects to localhost by default
-  @cluster = Cassandra.cluster
-  @sessionKong = @cluster.connect('kong')
-  @selectUserStatement = @sessionKong.prepare(
-    "SELECT username, password, consumer_id FROM kong.basicauth_credentials"
-  )
-  result = @sessionKong.execute(@selectUserStatement)
-  if result
-    result.rows.each do |r|
-      if params['username'] == r['username'].to_s
-        key = Digest::SHA1.hexdigest(params['password'] + r['consumer_id'].to_s)
-        if key == r['password'].to_s
-          session[:identity] = params['username']
-          redirect to '/'
-        end
+  client_list = consumerlist()
+  client_list.each do |r|
+    if params['username'] == r['username'].to_s
+      key = Digest::SHA1.hexdigest(params['password'] + r['consumer_id'].to_s)
+      if key == r['password'].to_s
+        session[:identity] = params['username']
+        redirect to '/'
       end
     end
   end
@@ -87,6 +79,7 @@ end
 # helper function to create plugin if not exist
 public def create_ratelimiting_plugin(apikey, consumer_id)
 
+  url = 'apis/' + apikey.to_s + '/plugins/'
   payload = {
     name: "rate-limiting",
     consumer_id: consumer_id.to_s,
@@ -94,22 +87,17 @@ public def create_ratelimiting_plugin(apikey, consumer_id)
       day: "1000000"
     }
   }.to_json
-
   header = { 
     'apikey' => apikey.to_s,
     'Content-Type' => "application/json"
   }
 
-  url = KONG_URL + 'apis/' + apikey.to_s + '/plugins/'
-
-  response = add_plugin(url, header, payload)
-
+  response = kong_request(url, "POST", header, payload)
   if response['id']
     return response['id']
   else
     return "Error"
   end
-
   return ""
 end
 # end helper method
@@ -117,26 +105,19 @@ end
 # Fetch Consumers List
 public def consumerlist()
 
-  # Kong Request URL
-  url = KONG_URL + 'consumers/'
-  
-  # Add Any Contraint for filtering
-  # id, custom_id, username, size, offset
-  payload = {}
-  
-  header = {
-    'Content-Type' => "application/json"
-  }
-
   begin
-    uri = URI.parse(url)
-    http = Net::HTTP.new(uri.host,uri.port)
-    req = Net::HTTP::Get.new(uri.path, header) # GET Method
+    url = 'consumers/'
+    
+    # Add Any Contraint for filtering
+    # id, custom_id, username, size, offset
+    payload = {}
+    
+    header = {
+      'Content-Type' => "application/json"
+    }
 
-    req.body = "#{payload}"
-    res = http.request(req)
-    json_res = JSON.parse(res.body)
-    return json_res['data']
+    response = kong_request(url, "GET", header, payload)
+    return response['data']
   rescue Exception => e
     print e.to_s
   end
@@ -161,24 +142,20 @@ end
 
 # helper method to create a new client
 public def create_consumer(username, custom_id)
-  @payload = {
-    "username" => username.to_s,
-    "custom_id" => custom_id.to_s
-  }.to_json
-  url = KONG_URL + 'consumers/'
-
+    
   begin
-    uri = URI.parse(url)
-    http = Net::HTTP.new(uri.host,uri.port)
-    req = Net::HTTP::Post.new(uri.path, initheader = { 'Content-Type' => 'application/json'})
+    url = 'consumers/'
+    payload = {
+      "username" => username.to_s,
+      "custom_id" => custom_id.to_s
+    }.to_json
+    header = {
+      'Content-Type' => 'application/json'
+    }
 
-    req.body = "#{@payload}"
-    res = http.request(req)
-
-    response = JSON.parse(res.body)
+    response = kong_request(url, "POST", header, payload)
 
     result = create_keyauth(response["username"])
-
     return result
   rescue Exception => e
     print e.to_s
@@ -192,18 +169,15 @@ end
 public def create_keyauth(username)
 
   begin
-    @payload = {
+    url = 'consumers/'+ username +'/key-auth'
+    payload = {
       "key" => generate_key()
     }.to_json
+    header = {
+      'Content-Type' => 'application/json'
+    }
 
-    url = KONG_URL + 'consumers/'+ username +'/key-auth'
-    uri = URI.parse(url)
-    http = Net::HTTP.new(uri.host,uri.port)
-    req = Net::HTTP::Post.new(uri.path, initheader = { 'Content-Type' => 'application/json'})
-
-    req.body = "#{@payload}"
-    res = http.request(req)
-    response = JSON.parse(res.body)
+    response = kong_request(url, "POST", header, payload)
     return response["consumer_id"].to_s
   rescue Exception => e
     print e.to_s
@@ -219,3 +193,32 @@ public def generate_key()
 return ""
 end
 # end helper method
+
+# Any type of request to kong
+# param - url - method ['GET', 'POST', 'PUT', 'PATCH'] - header (hash) - payload (json)
+public def kong_request(url, method, header, payload)
+  
+  begin
+    uri = URI.parse(KONG_URL + url)
+    http = Net::HTTP.new(uri.host,uri.port)
+    case method
+    when "GET"
+      req = Net::HTTP::Post.new(uri.path, header) # POST Method
+    when "POST"
+      req = Net::HTTP::Post.new(uri.path, header) # POST Method
+    when "PUT"
+      req = Net::HTTP::Put.new(uri.path, header) # POST Method
+    when "PATCH"
+      req = Net::HTTP::Patch.new(uri.path, header) # POST Method
+    else
+      # Default Case
+    end
+
+    req.body = "#{payload}"
+    res = http.request(req)
+    return JSON.parse(res.body)
+  rescue Exception => e
+    return e.to_s
+  end
+  return ""
+end
