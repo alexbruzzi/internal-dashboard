@@ -76,32 +76,6 @@ get '/logout' do
   redirect to('/login')
 end
 
-# helper function to create plugin if not exist
-public def create_ratelimiting_plugin(apikey, consumer_id)
-
-  url = 'apis/' + apikey.to_s + '/plugins/'
-  payload = {
-    name: "rate-limiting",
-    consumer_id: consumer_id.to_s,
-    config: {
-      day: "1000000"
-    }
-  }.to_json
-  header = { 
-    'apikey' => apikey.to_s,
-    'Content-Type' => "application/json"
-  }
-
-  response = kong_request(url, "POST", header, payload)
-  if response['id']
-    return response['id']
-  else
-    return "Error"
-  end
-  return ""
-end
-# end helper method
-
 # Fetch Consumers List
 public def consumerlist()
 
@@ -120,22 +94,6 @@ public def consumerlist()
     return response['data']
   rescue Exception => e
     print e.to_s
-  end
-  return ""
-end
-
-# Add Plugin
-public def add_plugin(url, header, payload) 
-  begin
-    uri = URI.parse(url)
-    http = Net::HTTP.new(uri.host,uri.port)
-    req = Net::HTTP::Post.new(uri.path, header) # POST Method
-
-    req.body = "#{payload}"
-    res = http.request(req)
-    return JSON.parse(res.body)
-  rescue Exception => e
-    return e.to_s
   end
   return ""
 end
@@ -161,7 +119,7 @@ public def create_consumer(username, custom_id)
     print e.to_s
     return "Error"
   end
-return ""
+  return ""
 end
 # end helper method
 
@@ -182,7 +140,7 @@ public def create_keyauth(username)
   rescue Exception => e
     print e.to_s
   end
-return ""
+  return ""
 end
 # end helper method
 
@@ -190,7 +148,7 @@ end
 public def generate_key()
   # Self Generate
   # Leave Blank to automatically generate Key
-return ""
+  return ""
 end
 # end helper method
 
