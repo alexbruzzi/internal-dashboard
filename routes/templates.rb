@@ -29,9 +29,9 @@ module Dashboard
 
       app.get '/fetch_categories' do
         content_type :json
+        clientId = params['clientId']
 
         begin
-          clientId = params['clientId']
           @categories = []
           Octo::Template.where(enterprise_id: clientId).each do |r|
             temp = {:category_type => r[:category_type].to_s}
@@ -44,6 +44,7 @@ module Dashboard
       end
 
       app.post '/add_category' do
+
         begin
           clientId = params['clientId']
           category_type = params['category_type']
@@ -77,11 +78,12 @@ module Dashboard
       # Update Template Text wrt client
       app.post '/template_update' do
 
+        templateCategory = params['templateCategory']
+        templateText = params['templateText']
+        templateState = params['templateState']
+        clientId = params['clientId']
+
         begin
-          templateCategory = params['templateCategory']
-          templateText = params['templateText']
-          templateState = params['templateState']
-          clientId = params['clientId']
           args = {
             enterprise_id: clientId,
             category_type: templateCategory
@@ -102,9 +104,12 @@ module Dashboard
       # Get Template Text wrt client and template category for updation
       app.get '/templates_text' do
 
+        clientId = params['clientId']
+        templateCategory = params['templateCategory']
+        
+        text = ""
+        state = false
         begin
-          clientId = params['clientId']
-          templateCategory = params['templateCategory']
           args = {
             enterprise_id: clientId,
             category_type: templateCategory
@@ -115,11 +120,15 @@ module Dashboard
           state = result[:active]
 
         rescue Exception => e
-          text = ""
-          state = false
           print e.to_s
         end
-      return {:text => text, :state => state}.to_json
+
+        # Create Json Response
+        response = {
+            text: text,
+            state: state
+          }.to_json
+      return response
       end
       # end route
 

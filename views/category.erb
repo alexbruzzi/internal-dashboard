@@ -1,5 +1,6 @@
-<div class="page-header">Template Category</div>
+<!-- Add New Category in Notification Templates -->
 <div class="container">
+  <div class="page-header">Template Category</div>
   <div id="formInfo">
     <span class="label label-info">Add Template Categories</span>
   </div>
@@ -21,7 +22,61 @@
     <span class="input-group-btn">
       <button id="updateCategory" type="button" class="btn btn-default"> Update </button>
     </span>
-    
   </div>
-  
+
+  <!-- For any Error Pass @error -->
+  <div id="error">
+    <% if @error then %>
+      <div class="alert alert-error"><%= @error %></div>
+    <% end %>
+  </div>
 </div>
+
+
+<script type="text/javascript">
+
+  // Fetch Categories for select clients
+  // Required ClientId of selected Client
+  $('#category_client_list').change(function(){
+    clientId = $(this).val();
+    defaultValue = "null";
+    if (clientId != defaultValue) {
+      $.get(
+        "/fetch_categories",
+        {
+          clientId : clientId
+        },
+        function(data) {
+          $("#category_list").html('');
+          $(data).each(function( index, value ) {
+            $("#category_list").append('<li class="list-group-item">'+ value['category_type'] +'</li>');
+          });
+        }
+      );
+    }
+  });
+
+  // Add new Category
+  // Required clientId of selected client and category_type (text) to add
+  $('#updateCategory').click(function(){
+    clientId = $('#category_client_list').val();
+    category_type = $('#category_type').val();
+    defaultValue = "null";
+    if (clientId != defaultValue && category_type != '') {
+      $.post("/add_category",
+      {
+        clientId: clientId,
+        category_type: category_type
+      },
+      function(data,status){
+        if (data == "success"){
+          $('#formInfo').html('<span class="label label-success">Updated Successfull</span>');
+          $("#category_list").append('<li class="list-group-item">' + category_type + '</li>');
+        } else {
+          $('#formInfo').html('<span class="label label-danger">Error</span>');
+        }
+      });
+    }
+  });
+
+</script>

@@ -1,0 +1,57 @@
+<div class="container">
+  <div class="page-header">Add Client</div>
+  <div id="formInfo">  
+    <span class="label label-info"> Fillup Client Details </span>
+  </div>
+  <br />
+  <fieldset class="form-group">
+    <div class="input-group">
+      <div class="input-group-addon"> Username </div>
+      <input type="text" class="form-control" id="username" placeholder="Enter username">
+    </div>
+  </fieldset>
+  <fieldset class="form-group">
+    <div class="input-group">
+      <div class="input-group-addon"> Custom Id </div>
+      <input type="text" class="form-control" id="custom_id" placeholder="Enter Custom Id">
+    </div>
+  </fieldset>
+  <button type="submit" class="btn btn-primary" id="add_client"> Submit </button>
+  
+  <!-- For any Error Pass @error -->
+  <div id="error">
+    <% if @error then %>
+      <div class="alert alert-error"><%= @error %></div>
+    <% end %>
+  </div>
+</div>
+
+
+<script type="text/javascript">
+
+  // Add a new Client or Consumer 
+  // Required Username and custom_id input from user
+  $('#add_client').click(function(){
+    var username = $('#username').val();
+    var custom_id = $('#custom_id').val();
+
+    if (username && custom_id){
+      $.post("/add_client",
+      {
+        username: username,
+        custom_id: custom_id
+      },
+      function(data,status){
+        $('#formInfo').html('<span class="label label-success">'+data+'</span>');
+        // if (data == "Success"){
+        //   $('#formInfo').html('<span class="label label-success">Success</span>');
+        // } else {
+        //   $('#formInfo').html('<span class="label label-danger">Error</span>');
+        // }
+      });
+    } else {
+      $('#formInfo').html('<span class="label label-danger">Input values missing</span>');
+    }
+  });
+  
+</script>

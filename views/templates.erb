@@ -1,5 +1,5 @@
-<div class="page-header">Notification Templates</div>
 <div class="container">
+  <div class="page-header">Notification Templates</div>
   <div id="formInfo">
     <span class="label label-info">Add or Modify Template Text</span>
   </div>
@@ -19,5 +19,101 @@
   <br />
   <input id="templateState" type="checkbox"> Template State
   <br /><br />
-  <button id="updateButton" type="button" class="btn btn-default">Update</button>
+  <button id="updateButton" type="button" class="btn btn-default">
+    Update
+  </button>
+
+  <!-- For any Error Pass @error -->
+  <div id="error">
+    <% if @error then %>
+      <div class="alert alert-error"><%= @error %></div>
+    <% end %>
+  </div>
 </div>
+
+<script type="text/javascript">
+
+  // Fetch Category wrt selected client
+  // Required clientId of selected client
+  $('#template_clients').change(function() {
+    clientId = $(this).val();
+    defaultValue = "null";
+    if (clientId != defaultValue) {
+      $.get(
+        "/fetch_categories",
+        {
+          clientId : clientId
+        },
+        function(data) {
+          $('#templateText').val("");
+          $('#templateState').prop('checked', false);
+          $("#template_category").html('');
+          $("#template_category").append('<option value="null">Select Category</option>');
+          $(data).each(function( index, value ) {
+            $("#template_category").append('<option value="'+value['category_type']+'">'+ value['category_type'] +'</option>');
+          });
+        }
+      );
+    } else {
+      $('#templateText').val("");
+      $('#templateState').prop('checked', false);
+    }
+  });
+
+  // Fetch Text on category change 
+  // Required templateCategory selected and clientId
+  $('#template_category').change(function() {
+    clientId = $('#template_clients').val();
+    defaultValue = "null";
+    if ($(this).val() != defaultValue){
+      $.get(
+        "/templates_text",
+        {
+          templateCategory : $(this).val(),
+          clientId : clientId
+        },
+        function(data) {
+          var obj = jQuery.parseJSON(data);
+          $('#templateText').val(obj['text']);
+          $('#templateState').prop('checked', obj['state']);
+        }
+      );
+    } else {
+      $('#templateText').val("");
+      $('#templateState').prop('checked', false);
+    }
+  });
+
+  // Modify or Add new Template Text 
+  // Required : 
+  // clientId of selected client
+  // templateCategory or type of template
+  // templateText to be updated
+  // templateState to set template active or not
+  $('#updateButton').click(function(){
+    clientId = $('#template_clients').val();
+    templateCategory = $('#template_category').val();
+    templateText = $('#templateText').val();
+    templateState = $('#templateState').is(':checked'); 
+    defaultValue = "null";
+    if (templateText != "" && templateCategory != defaultValue && clientId != defaultValue){
+      $.post("/template_update",
+      {
+        templateCategory: templateCategory,
+        templateText: templateText,
+        templateState: templateState,
+        clientId: clientId
+      },
+      function(data,status){
+        if (data == "success"){
+          $('#formInfo').html('<span class="label label-success">Updated Successfull</span>');
+        } else {
+          $('#formInfo').html('<span class="label label-danger">Error</span>');
+        }
+      });
+    } else {
+      $('#formInfo').html('<span class="label label-danger">Input values missing</span>');
+    }
+  });
+  
+</script>
