@@ -36,6 +36,9 @@ module Dashboard
         begin
           @cluster = Cassandra.cluster
           @sessionKong = @cluster.connect('kong')
+          @selectConsumersStatement = @sessionKong.prepare(
+            'SELECT id, custom_id, username FROM kong.consumers'
+          )
           @selectEventsApiStatement = @sessionKong.prepare(
             'SELECT id FROM kong.apis WHERE name=\'events\''
           )
@@ -51,9 +54,9 @@ module Dashboard
 
           @clients = []
 
-          list_clients = app.consumerlist()
+          client_rows = @sessionKong.execute(@selectConsumersStatement)
 
-          list_clients.each do |row|
+          client_rows.rows.each do |row|
 
             args = [Cassandra::Uuid.new(row['id'].to_s)]
             key_rows = @sessionKong.execute(@selectKeyauthStatement, arguments: args)

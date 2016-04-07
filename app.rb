@@ -5,6 +5,7 @@ require 'json'
 require 'cassandra'
 require 'net/http'
 require 'uri'
+require 'securerandom'
 require 'digest/sha1'
 
 require 'octocore'
@@ -56,8 +57,14 @@ end
 # Perform Login
 post '/login' do
 
-  client_list = consumerlist()
-  client_list.each do |r|
+  # Connects to localhost by default
+  @cluster = Cassandra.cluster
+  @sessionKong = @cluster.connect('kong')
+  @selectUserStatement = @sessionKong.prepare(
+    "SELECT username, password, consumer_id FROM kong.basicauth_credentials"
+  )
+  result = @sessionKong.execute(@selectUserStatement)
+  result.rows.each do |r|
     if params['username'] == r['username'].to_s
       key = Digest::SHA1.hexdigest(params['password'] + r['consumer_id'].to_s)
       if key == r['password'].to_s
@@ -76,60 +83,61 @@ get '/logout' do
   redirect to('/login')
 end
 
-# Fetch Consumers List
-public def consumerlist()
-
-  begin
-    url = 'consumers/'
-    
-    # Add Any Contraint for filtering
-    # id, custom_id, username, size, offset
-    payload = {}
-    
-    header = {
-      'Content-Type' => "application/json"
-    }
-
-    response = kong_request(url, "GET", header, payload)
-    return response['data']
-  rescue Exception => e
-    print e.to_s
-  end
-  return ""
-end
-
 # helper method to create a new client
-public def create_consumer(username, custom_id)
-    
-  begin
+public def create_consumer(username, email, password)
+  unless enterprise_name_exists?(username)
+
+    # create enterprise
+    e = Octo::Enterprise.new
+    e.name = username
+    e.save!
+
+    # create its Authentication stuff
+    auth = Octo::Authorization.new
+    auth.enterprise = e
+    auth.username = e.name
+    auth.apikey = generate_key
+    auth.email = email
+    custom_id = e.id.to_s
+    auth.password = generate_password(password, e.id.to_s)
+    auth.save!
+
+    method = "PUT"
     url = 'consumers/'
     payload = {
-      "username" => username.to_s,
-      "custom_id" => custom_id.to_s
+      username: e.name,
+      custom_id: e.id.to_s
     }.to_json
     header = {
       'Content-Type' => 'application/json'
     }
-
-    response = kong_request(url, "POST", header, payload)
-
-    result = create_keyauth(response["username"])
-    return result
-  rescue Exception => e
-    print e.to_s
-    return "Error"
+    kong_request(url, method, header, payload)
+    create_keyauth(e.name, auth.apikey)
+  else
+    return 'Not creating client as client name exists'
   end
-  return ""
+  "success"
 end
-# end helper method
+
+def enterprise_name_exists?(enterprise_name)
+  Octo::Enterprise.all.select { |x| x.name == enterprise_name}.length > 0
+end
+
+def generate_password(password, consumer_id)
+  Digest::SHA1.hexdigest(password + consumer_id)
+end
+
+def validate_password(password, consumer_id)
+  
+end
 
 # helper method to create keyauth
-public def create_keyauth(username)
+def create_keyauth(username, keyauth_key)
 
   begin
     url = 'consumers/'+ username +'/key-auth'
     payload = {
-      "key" => generate_key()
+      key: keyauth_key
     }.to_json
     header = {
       'Content-Type' => 'application/json'
@@ -144,13 +152,9 @@ public def create_keyauth(username)
 end
 # end helper method
 
-# helper function to generate Key for KeyAuth
-public def generate_key()
-  # Self Generate
-  # Leave Blank to automatically generate Key
-  return ""
+def generate_key
+  SecureRandom.hex
 end
-# end helper method
 
 # Any type of request to kong
 # param - url - method ['GET', 'POST', 'PUT', 'PATCH'] - header (hash) - payload (json)

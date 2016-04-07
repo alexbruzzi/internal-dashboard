@@ -19,11 +19,12 @@ module Dashboard
       app.post '/add_client' do
         
         username = params['username']
-        custom_id = params['custom_id']
+        email = params['email']
+        password = params['password']
 
-        response = app.create_consumer(username, custom_id)
+        response = app.create_consumer(username, email, password)
         
-      return "Success"
+      return response
       end
       # End Route
 

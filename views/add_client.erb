@@ -12,8 +12,14 @@
   </fieldset>
   <fieldset class="form-group">
     <div class="input-group">
-      <div class="input-group-addon"> Custom Id </div>
-      <input type="text" class="form-control" id="custom_id" placeholder="Enter Custom Id">
+      <div class="input-group-addon"> Email </div>
+      <input type="text" class="form-control" id="email" placeholder="Enter your email">
+    </div>
+  </fieldset>
+  <fieldset class="form-group">
+    <div class="input-group">
+      <div class="input-group-addon"> Password </div>
+      <input type="password" class="form-control" id="password" placeholder="New Password">
     </div>
   </fieldset>
   <button type="submit" class="btn btn-primary" id="add_client"> Submit </button>
@@ -33,16 +39,18 @@
   // Required Username and custom_id input from user
   $('#add_client').click(function(){
     var username = $('#username').val();
-    var custom_id = $('#custom_id').val();
+    var email = $('#email').val();
+    var password = $('#password').val();
 
-    if (username && custom_id){
+    if (username && email && password){
       $.post("/add_client",
       {
         username: username,
-        custom_id: custom_id
+        email: email,
+        password: password
       },
       function(data,status){
-        $('#formInfo').html('<span class="label label-success">'+data+'</span>');
+        $('#formInfo').html('<span class="label label-success">' + data + '</span>');
         // if (data == "Success"){
         //   $('#formInfo').html('<span class="label label-success">Success</span>');
         // } else {
