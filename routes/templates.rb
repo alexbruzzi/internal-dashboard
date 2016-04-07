@@ -14,13 +14,13 @@ module Dashboard
         @cluster = Cassandra.cluster
         @sessionKong = @cluster.connect('kong')
         @selectConsumersStatement = @sessionKong.prepare(
-          'SELECT id, custom_id FROM kong.consumers'
+          'SELECT id, custom_id, username FROM kong.consumers'
         )
         result = @sessionKong.execute(@selectConsumersStatement)
         @clients = []
         if result
           result.rows.each do |r|
-            temp = {:id => r['id'].to_s, :custom_id => r['custom_id'].to_s}
+            temp = {:id => r['id'].to_s, :custom_id => r['username'].to_s}
             @clients.push(temp)
           end
         end
@@ -62,12 +62,12 @@ module Dashboard
         @cluster = Cassandra.cluster
         @sessionKong = @cluster.connect('kong')
         @selectConsumersStatement = @sessionKong.prepare(
-          'SELECT id, custom_id FROM kong.consumers'
+          'SELECT id, custom_id, username FROM kong.consumers'
         )
         result = @sessionKong.execute(@selectConsumersStatement)
         if result
           result.rows.each do |r|
-            temp = {:id => r['id'].to_s, :custom_id => r['custom_id'].to_s}
+            temp = {:id => r['id'].to_s, :custom_id => r['username'].to_s}
             @clients.push(temp)
           end
         end

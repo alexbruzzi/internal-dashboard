@@ -5,25 +5,13 @@ module Dashboard
 
       app.get '/api_plugins' do
 
-        begin
-          data = []
-          url = 'plugins/'
-          
-          # id - A filter on the list based on the id field.
-          # name - A filter on the list based on the name field.
-          # api_id - A filter on the list based on the api_id field.
-          # consumer_id - A filter on the list based on the consumer_id field.
-          # size - default is 100  A limit on the number of objects to be returned
-          # offset - A cursor used for pagination. offset is an object identifier that defines a place in the list. 
-          payload = {
-            name: "cors"
-          }
-
-          header = {
-            "Content-Type" => "application/json"
-          }
-
-          data = kong_request(url, "GET", header, payload)
+         begin
+          @error = []
+          data = app.consumerlist()
+          data.each do |d|
+            print d
+            @error.push(d['id'])
+          end
         rescue Exception => e
           @error = e.to_s
         end
@@ -73,7 +61,7 @@ module Dashboard
             if plugin_id
               # Plugin ID exists
             else
-              plugin_id = app.create_ratelimiting_plugin( events_id, row['id'].to_s)
+              plugin_id = create_ratelimiting_plugin( events_id, row['id'].to_s)
             end
 
             data = { :id => row['id'].to_s, :custom_id => row['username'].to_s, :authkey => key_rows.rows.first['key'].to_s, :pluginid => plugin_id.to_s }
@@ -123,30 +111,6 @@ module Dashboard
       return "success"
       end
       # End Plugin Update
-
-      # helper function to create plugin if not exist
-      public def create_ratelimiting_plugin(apikey, consumer_id)
-
-        url = 'apis/' + apikey.to_s + '/plugins/'
-        payload = {
-          name: "rate-limiting",
-          consumer_id: consumer_id.to_s,
-          config: {
-            day: "1000000"
-          }
-        }.to_json
-        header = { 
-          'apikey' => apikey.to_s,
-          'Content-Type' => "application/json"
-        }
-
-        response = kong_request(url, "POST", header, payload)
-        if response['id']
-          return response['id']
-        end
-        return ""
-      end
-      # end helper method
 
     end
   end

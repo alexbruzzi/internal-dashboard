@@ -8,6 +8,7 @@ require 'uri'
 require 'securerandom'
 require 'digest/sha1'
 
+require 'cequel'
 require 'octocore'
 
 require_relative 'routes/clients'
@@ -56,24 +57,20 @@ end
 
 # Perform Login
 post '/login' do
-
-  # Connects to localhost by default
-  @cluster = Cassandra.cluster
-  @sessionKong = @cluster.connect('kong')
-  @selectUserStatement = @sessionKong.prepare(
-    "SELECT username, password, consumer_id FROM kong.basicauth_credentials"
-  )
-  result = @sessionKong.execute(@selectUserStatement)
-  result.rows.each do |r|
-    if params['username'] == r['username'].to_s
-      key = Digest::SHA1.hexdigest(params['password'] + r['consumer_id'].to_s)
-      if key == r['password'].to_s
-        session[:identity] = params['username']
-        redirect to '/'
-      end
+  begin
+    username = params['username']
+    password = params['password']
+    result = Octo::Authorization.all.select { |x| x.username == username && @temp = x}  
+    check = validate_password(@temp[:password], @temp[:enterprise_id], password)
+    if check
+      session[:identity] = username
+      redirect to '/'
+    else
+      redirect to('/login')
     end
+  rescue Exception => e
+    redirect to '/'
   end
-  redirect to('/login')
 end
 
 
@@ -81,6 +78,35 @@ end
 get '/logout' do
   session.delete(:identity)
   redirect to('/login')
+end
+
+# Fetch Consumers List
+public def consumerlist()
+
+  # Kong Request URL
+  url = KONG_URL + 'consumers/'
+  
+  # Add Any Contraint for filtering
+  # id, custom_id, username, size, offset
+  payload = {}
+  
+  header = {
+    'Content-Type' => "application/json"
+  }
+
+  begin
+    uri = URI.parse(url)
+    http = Net::HTTP.new(uri.host,uri.port)
+    req = Net::HTTP::Get.new(uri.path, header) # GET Method
+
+    req.body = "#{payload}"
+    res = http.request(req)
+    json_res = JSON.parse(res.body)
+    return json_res['data']
+  rescue Exception => e
+    print e.to_s
+  end
+  return ""
 end
 
 # helper method to create a new client
@@ -94,7 +120,7 @@ public def create_consumer(username, email, password)
 
     # create its Authentication stuff
     auth = Octo::Authorization.new
-    auth.enterprise = e
+    auth.enterprise_id = e.id.to_s
     auth.username = e.name
     auth.apikey = generate_key
     auth.email = email
@@ -127,8 +153,9 @@ def generate_password(password, consumer_id)
   Digest::SHA1.hexdigest(password + consumer_id)
 end
 
-def validate_password(password, consumer_id)
-  
+def validate_password(db_password, consumer_id, password)
+  hash_password = Digest::SHA1.hexdigest(password + consumer_id)
+  hash_password == db_password
 end
 
 # helper method to create keyauth
@@ -152,6 +179,30 @@ def create_keyauth(username, keyauth_key)
 end
 # end helper method
 
+# helper function to create plugin if not exist
+public def create_ratelimiting_plugin(apikey, consumer_id)
+
+  url = 'apis/' + apikey.to_s + '/plugins/'
+  payload = {
+    name: "rate-limiting",
+    consumer_id: consumer_id.to_s,
+    config: {
+      day: "1000000"
+    }
+  }.to_json
+  header = { 
+    'apikey' => apikey.to_s,
+    'Content-Type' => "application/json"
+  }
+
+  response = kong_request(url, "POST", header, payload)
+  if response['id']
+    return response['id']
+  end
+  return ""
+end
+# end helper method
+
 def generate_key
   SecureRandom.hex
 end
@@ -165,7 +216,7 @@ public def kong_request(url, method, header, payload)
     http = Net::HTTP.new(uri.host,uri.port)
     case method
     when "GET"
-      req = Net::HTTP::Post.new(uri.path, header) # POST Method
+      req = Net::HTTP::Get.new(uri.path, header) # POST Method
     when "POST"
       req = Net::HTTP::Post.new(uri.path, header) # POST Method
     when "PUT"
