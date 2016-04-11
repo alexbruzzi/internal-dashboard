@@ -8,7 +8,7 @@
   <select class="form-control" id="category_client_list">
     <option value="null">Select Client</option>
     <% @clients.each do |cl| %>
-      <option value="<%= cl[:id] %>"><%= cl[:custom_id] %></option>
+      <option value="<%= cl[:id] %>"><%= cl[:username] %></option>
     <% end %>
   </select>
   <br />
@@ -27,7 +27,7 @@
   <!-- For any Error Pass @error -->
   <div id="error">
     <% if @error then %>
-      <div class="alert alert-error"><%= @error %></div>
+      <span class="label label-danger"><%= @error %></span>
     <% end %>
   </div>
 </div>

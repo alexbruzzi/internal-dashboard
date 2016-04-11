@@ -5,28 +5,20 @@ module Dashboard
 
     def self.registered(app)
 
-      def checkEnterprise(enterpriseId)
-        return Octo::Enterprise.findOrCreate({id: enterpriseId})
-      end
-
+      # Request Categories Page
+      # Display category page
       app.get '/template_categories' do
 
-        @cluster = Cassandra.cluster
-        @sessionKong = @cluster.connect('kong')
-        @selectConsumersStatement = @sessionKong.prepare(
-          'SELECT id, custom_id, username FROM kong.consumers'
-        )
-        result = @sessionKong.execute(@selectConsumersStatement)
         @clients = []
-        if result
-          result.rows.each do |r|
-            temp = {:id => r['id'].to_s, :custom_id => r['username'].to_s}
-            @clients.push(temp)
-          end
+        consumerlist.each do |r|
+          temp = {:id => r['id'].to_s, :username => r['username']}
+          @clients.push(temp)
         end
-      erb :category
+        erb :category
       end
 
+      # Fetch all categories
+      # @return [JSON] Categories List
       app.get '/fetch_categories' do
         content_type :json
         clientId = params['clientId']
@@ -38,11 +30,13 @@ module Dashboard
             @categories.push(temp)
           end
         rescue Exception => e
-          print e.to_s
+          @error = e.to_s
         end
-      return @categories.to_json
+        @categories.to_json
       end
 
+      # Add a new category
+      # @return [String] Status of request
       app.post '/add_category' do
 
         begin
@@ -50,32 +44,26 @@ module Dashboard
           category_type = params['category_type']
           Octo::Template.findOrCreate({enterprise_id: clientId, category_type: category_type})
         rescue Exception => e
-          print e.to_s
+          @error = e.to_s
         end
-      return "success"
+        "success"
       end
 
-      # Notification Templates
+      # Get all Notification Templates
+      # Display templates page
       app.get '/notification_templates' do
 
         @clients = []
-        @cluster = Cassandra.cluster
-        @sessionKong = @cluster.connect('kong')
-        @selectConsumersStatement = @sessionKong.prepare(
-          'SELECT id, custom_id, username FROM kong.consumers'
-        )
-        result = @sessionKong.execute(@selectConsumersStatement)
-        if result
-          result.rows.each do |r|
-            temp = {:id => r['id'].to_s, :custom_id => r['username'].to_s}
-            @clients.push(temp)
-          end
+        consumerlist.each do |r|
+          temp = {:id => r['id'].to_s, :username => r['username']}
+          @clients.push(temp)
         end
         erb :templates
       end
       # end route
 
-      # Update Template Text wrt client
+      # Update Notification Template
+      # @return [String] Status of request
       app.post '/template_update' do
 
         templateCategory = params['templateCategory']
@@ -95,13 +83,14 @@ module Dashboard
           Octo::Template.findOrCreateOrUpdate(args, options)
 
         rescue Exception => e
-          print e.to_s
+          @error = e.to_s
+          return "error"
         end
-      return "success"
+        "success"
       end
-      # end route
 
-      # Get Template Text wrt client and template category for updation
+      # Get Notification Template details 
+      # @return [JSON] Template details
       app.get '/templates_text' do
 
         clientId = params['clientId']
@@ -120,17 +109,12 @@ module Dashboard
           state = result[:active]
 
         rescue Exception => e
-          print e.to_s
+          @error = e.to_s
         end
 
         # Create Json Response
-        response = {
-            text: text,
-            state: state
-          }.to_json
-      return response
+        { text: text, state: state }.to_json
       end
-      # end route
 
     end
   end

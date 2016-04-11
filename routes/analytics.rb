@@ -5,9 +5,9 @@ module Dashboard
 
     def self.registered(app)
 
+      # Analytics of API hits
       app.get '/apihits' do
 
-      return 1
       end
 
     end

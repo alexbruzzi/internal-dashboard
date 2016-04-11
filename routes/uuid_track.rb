@@ -3,19 +3,20 @@ module Dashboard
     def self.registered(app)
       
       # Track UUID's
+      # Display UUID tracking form
       app.get '/uuid_track' do
         erb :track
       end
-      # end route
 
-      # Get uuid details (to track uuids)
+      # Get uuid details
+      # @return [String] Get UUID details
       app.get '/uuid_details' do
         
         service_type = params['service_type']
-        uuid_value = params['uuid_value'] # uuid_value = "bce946c6-e167-4b50-b145-1700eafa889b"
+        uuid_value = params['uuid_value']
         response = []
+        
         begin
-
           case service_type
           when "app_init"
             Octo::AppInit.where(customid: uuid_value).each do |r|
@@ -38,12 +39,11 @@ module Dashboard
               response.push(r.to_s)
             end
           end
+          response
         rescue Exception => e
-          return "Error"
+          "Wrong UUID Value"
         end
-      return response
       end
-      # end route
 
     end
   end

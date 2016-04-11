@@ -7,7 +7,7 @@
   <select class="form-control" id="template_clients">
     <option value="null">Select Client</option>
     <% @clients.each do |cl| %>
-      <option value="<%= cl[:id] %>"><%= cl[:custom_id] %></option>
+      <option value="<%= cl[:id] %>"><%= cl[:username] %></option>
     <% end %>
   </select>
   <br />
@@ -26,15 +26,13 @@
   <!-- For any Error Pass @error -->
   <div id="error">
     <% if @error then %>
-      <div class="alert alert-error"><%= @error %></div>
+      <span class="label label-danger"><%= @error %></span>
     <% end %>
   </div>
 </div>
 
 <script type="text/javascript">
 
-  // Fetch Category wrt selected client
-  // Required clientId of selected client
   $('#template_clients').change(function() {
     clientId = $(this).val();
     defaultValue = "null";
@@ -60,8 +58,6 @@
     }
   });
 
-  // Fetch Text on category change 
-  // Required templateCategory selected and clientId
   $('#template_category').change(function() {
     clientId = $('#template_clients').val();
     defaultValue = "null";
@@ -84,12 +80,6 @@
     }
   });
 
-  // Modify or Add new Template Text 
-  // Required : 
-  // clientId of selected client
-  // templateCategory or type of template
-  // templateText to be updated
-  // templateState to set template active or not
   $('#updateButton').click(function(){
     clientId = $('#template_clients').val();
     templateCategory = $('#template_category').val();

@@ -5,7 +5,6 @@
     <% @clients.each do |cl| %>
       <option 
       	value="<%= cl[:id] %>" 
-      	data-apikey="<%= cl[:authkey] %>" 
       	data-pluginid="<%= cl[:pluginid] %>" > 
       		<%= cl[:custom_id] %> 
     	</option>
@@ -14,43 +13,99 @@
   <br /><br />
   <div class="list-group">
     <div class="list-group-item list-group-item-success"> 
-      Set Daily Requests Rate Limit (Set "0" to block client) 
-      <input type="number" class="form-control" id="rate_limit" />
+      Second Limit (Set "0" to block client) 
+      <input type="number" class="form-control" id="rate_limit_second" min="0" />
+    </div><br />
+    <div class="list-group-item list-group-item-success"> 
+      Minute Limit (Set "0" to block client) 
+      <input type="number" class="form-control" id="rate_limit_minute" min="0" />
+    </div><br />
+    <div class="list-group-item list-group-item-success"> 
+      Hour Limit (Set "0" to block client) 
+      <input type="number" class="form-control" id="rate_limit_hour" min="0" />
+    </div><br />
+    <div class="list-group-item list-group-item-success"> 
+      Day Limit (Set "0" to block client) 
+      <input type="number" class="form-control" id="rate_limit_day" min="0" />
+    </div><br />
+    <div class="list-group-item list-group-item-success"> 
+      Month Limit (Set "0" to block client) 
+      <input type="number" class="form-control" id="rate_limit_month" min="0" />
+    </div><br />
+    <div class="list-group-item list-group-item-success"> 
+      Year Limit (Set "0" to block client) 
+      <input type="number" class="form-control" id="rate_limit_year" min="0" />
     </div>
   </div>
-  <div id="formInfo"></div>
+  <div id="formInfo">
+    <!-- For any Error Pass @error -->
+    <div id="error">
+      <% if @error then %>
+        <span class="label label-danger"><%= @error %></span>
+      <% end %>
+    </div>
+  </div>
   <br />
-  <button type="button" id="updateRateLimit" class="btn btn-default"> 
+  <button type="button" id="update" class="btn btn-default"> 
     Update 
   </button>
 
-  <!-- For any Error Pass @error -->
-  <div id="error">
-    <% if @error then %>
-      <div class="alert alert-error"><%= @error %></div>
-    <% end %>
-  </div>
+  
 </div>
 
 <script type="text/javascript">
-  $('#updateRateLimit').click(function(){
-    if ($('#client_manage_list').val() != "null" && $('#rate_limit').val()){
-      $.post("/plugins/update",
+  $('#update').click(function(){
+    if ($('#client_manage_list').val() != "null"){
+      $.post("/rate_limiting/update",
       {
-        plugin_id: $('#client_manage_list :selected').data("pluginid"),
-        consumer_id: $('#client_manage_list :selected').val(),
-        day_limit: $('#rate_limit').val(),
-        apikey: $('#client_manage_list :selected').data("apikey")
+        plugin_id: String($('#client_manage_list :selected').data("pluginid")),
+        consumer_id: String($('#client_manage_list :selected').val()),
+        config: {
+          day: $('#rate_limit_day').val(),
+          minute: $('#rate_limit_minute').val(),
+          second: $('#rate_limit_second').val(),
+          hour: $('#rate_limit_hour').val(),
+          year: $('#rate_limit_year').val(),
+          month: $('#rate_limit_month').val()
+        }
       },
       function(data,status){
-        if (data == "success"){
-          $('#formInfo').html('<span class="label label-success">Updated Successfull</span>');
-        } else {
-          $('#formInfo').html('<span class="label label-danger">Error</span>');
+        if (data != "error") {
+          data = jQuery.parseJSON(data);
+          if (data['day'] != null){  
+            $('#rate_limit_day').val(data['day']);
+            $('#rate_limit_minute').val(data['minute']);
+            $('#rate_limit_second').val(data['second']);
+            $('#rate_limit_hour').val(data['hour']);
+            $('#rate_limit_year').val(data['year']);
+            $('#rate_limit_month').val(data['month']);
+            $('#formInfo').html('<span class="label label-success">Updated Successfull</span>');
+          } else {
+            $('#formInfo').html('<span class="label label-danger">'+data+'</span>');
+          }
         }
       });
     } else {
       $('#formInfo').html('<span class="label label-danger">Input values missing</span>');
     }
   });
+
+  $('#client_manage_list').change(function(){
+    if ($(this).val() != "null"){
+      $.get("/rate_limiting/details",
+      {
+        plugin_id: String($('#client_manage_list :selected').data("pluginid"))
+      },
+      function(data,status){
+        var obj = jQuery.parseJSON(data);
+        $('#rate_limit_day').val(obj['day']);
+        $('#rate_limit_minute').val(obj['minute']);
+        $('#rate_limit_second').val(obj['second']);
+        $('#rate_limit_hour').val(obj['hour']);
+        $('#rate_limit_year').val(obj['year']);
+        $('#rate_limit_month').val(obj['month']);
+      });
+    }
+  });
+
 </script>
