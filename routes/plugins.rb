@@ -28,7 +28,7 @@ module Dashboard
             plugin_url = '/plugins/?name=rate-limiting&api_id='+events_id+'&consumer_id='+consumer_id
             plugin_rows = process_kong_request(plugin_url, :GET, {})
             
-            if plugin_rows.length > 0
+            if plugin_rows['total'] > 0
               # Plugin ID exists
               plugin_id = plugin_rows['data'].first['id']
             else
