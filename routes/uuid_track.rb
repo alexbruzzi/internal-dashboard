@@ -20,26 +20,26 @@ module Dashboard
           case service_type
           when "app_init"
             Octo::AppInit.where(customid: uuid_value).each do |r|
-              response.push(r.to_s)
+              response.push(r)
             end
           when "app_login"
             Octo::AppLogin.where(customid: uuid_value).each do |r|
-              response.push(r.to_s)
+              response.push(r)
             end
           when "app_logout"
             Octo::AppLogout.where(customid: uuid_value).each do |r|
-              response.push(r.to_s)
+              response.push(r)
             end
           when "page_view"
             Octo::Page.where(customid: uuid_value).each do |r|
-              response.push(r.to_s)
+              response.push(r)
             end
           when "productpage_view"
             Octo::Product.where(customid: uuid_value).each do |r|
-              response.push(r.to_s)
+              response.push(r)
             end
           end
-          response
+          response.to_json
         rescue Exception => e
           "Wrong UUID Value"
         end

@@ -11,7 +11,7 @@ module Dashboard
 
         @clients = []
         consumerlist.each do |r|
-          temp = {:id => r['id'].to_s, :username => r['username']}
+          temp = {:id => r['custom_id'].to_s, :username => r['username']}
           @clients.push(temp)
         end
         erb :category

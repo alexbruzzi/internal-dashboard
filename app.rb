@@ -38,7 +38,9 @@ end
 
 before do
   pass if %w[login].include? request.path_info.split('/')[1]
-  unless session[:identity] && validate_token(session[:identity], session[:session_token])
+  unless session[:username] && validate_token(session[:username], session[:session_token]) && check_admin(session[:username])
+    session.delete(:username)
+    session.delete(:session_token)
     halt erb(:login_form)
   end
 end
@@ -62,7 +64,7 @@ post '/login' do
   begin
     res = fetch_consumer( username)
     if res.admin && validate_password( username, password)
-      session[:identity] = username
+      session[:username] = username
       session[:session_token] = save_session(username)
       redirect to '/'
     else
@@ -75,8 +77,8 @@ end
 
 # Perform Logout
 get '/logout' do
-  destroy_session( session[:identity])
-  session.delete(:identity)
+  destroy_session( session[:username])
+  session.delete(:username)
   session.delete(:session_token)
   redirect to('/login')
 end

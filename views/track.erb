@@ -45,7 +45,8 @@
         uuid_value : $('#uuid_value').val()
       },
       function(data) {
-        $('#search_result').html('<code>' + JSON.stringify(data, null, '  ') + '</code>');
+        var code = JSON.stringify(JSON.parse(data), null, '\t');
+        $('#search_result').html('<code>' + code + '</code>');
       }
     );
   });
