@@ -1,7 +1,8 @@
 source 'https://rubygems.org'
+ruby '2.1.5'
 
 gem 'sinatra'
-gem 'securerandom'
+gem 'sinatra-contrib'
 gem 'json'
-gem 'cassandra'
-gem 'cequel'
+gem 'octocore'
+
