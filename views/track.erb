@@ -1,18 +1,6 @@
 <div class="container">
   <div class="page-header">Search for UUID's</div>
   <div class="row">
-    <div class="col-lg-4">
-      <div class="form-group">
-        <select class="form-control" id="services_list">
-          <option value="null">Select Service</option>
-          <option value="app_init">APP Init</option>
-          <option value="app_login">APP Login</option>
-          <option value="app_logout">APP Logout</option>
-          <option value="page_view">Page Views</option>
-          <option value="productpage_view">Product Page Views</option>
-        </select>
-      </div>
-    </div>
     <div class="col-lg-8">
       <div class="input-group">
           <input id="uuid_value" type="text" placeholder="Enter UUID" class="form-control" aria-label="...">
@@ -36,12 +24,11 @@
 <script type="text/javascript">
 
   // UUID Search for tracking
-  // Required Service_type and uuid value
+  // Required uuid value
   $('#search').on('click', function(event) {
     $.get(
       "/uuid_details",
       { 
-        service_type : $('#services_list').val(), 
         uuid_value : $('#uuid_value').val()
       },
       function(data) {
