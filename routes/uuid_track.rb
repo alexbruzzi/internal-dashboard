@@ -12,33 +12,13 @@ module Dashboard
       # @return [String] Get UUID details
       app.get '/uuid_details' do
         
-        service_type = params['service_type']
+        # service_type = params['service_type']
         uuid_value = params['uuid_value']
-        response = []
+        response = nil
         
         begin
-          case service_type
-          when "app_init"
-            Octo::AppInit.where(customid: uuid_value).each do |r|
-              response.push(r)
-            end
-          when "app_login"
-            Octo::AppLogin.where(customid: uuid_value).each do |r|
-              response.push(r)
-            end
-          when "app_logout"
-            Octo::AppLogout.where(customid: uuid_value).each do |r|
-              response.push(r)
-            end
-          when "page_view"
-            Octo::Page.where(customid: uuid_value).each do |r|
-              response.push(r)
-            end
-          when "productpage_view"
-            Octo::Product.where(customid: uuid_value).each do |r|
-              response.push(r)
-            end
-          end
+          res = Octo::ApiTrack.where(customid: uuid_value).first
+          response = res[:json_dump]
           response.to_json
         rescue Exception => e
           "Wrong UUID Value"
