@@ -30,7 +30,7 @@ register Dashboard::UuidTrack
 register Dashboard::Analytics
 register Dashboard::Plugins
 
-Octo.connect_with_config_file(File.join(Dir.pwd, 'config', 'config.yml'))
+Octo.connect_with(File.join(Dir.pwd, 'config'))
 
 configure do
   enable :sessions
